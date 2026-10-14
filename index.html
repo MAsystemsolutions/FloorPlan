@@ -1,0 +1,456 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font-size:14px}img{max-width:100%}[hidden]{display:none!important}</style>
+</head>
+<body>
+<title>Lote Site Planner</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Familjen+Grotesk:wght@500;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: surveyor's worksheet — inputs rail on the left, plan sheets (top view, side view, distances, ask) on the right; one column on phones */
+:root{
+  --bg:#eef1ec; --paper:#fbfcf9; --ink:#1d2b2a; --muted:#647270; --line:#d3dad3; --grid:#e5eae4;
+  --accent:#2f6b52; --accent-ink:#ffffff; --earth:#c9c2ae; --warn:#a4570f; --bad:#b3362c; --ok:#2f7a4a;
+  --home:#e9d7b9; --service:#cfe3d6; --water:#bcd9ea; --outdoor:#e2e2d6; --septic:#ecc9be;
+  --display:"Familjen Grotesk",ui-sans-serif,system-ui,sans-serif;
+  --body:ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#131917; --paper:#1a2220; --ink:#dde6e2; --muted:#93a39e; --line:#2c3833; --grid:#222c29;
+  --accent:#6cbf97; --accent-ink:#0f1a15; --earth:#4a4436; --warn:#e2a15a; --bad:#ef7d72; --ok:#7fcf9a;
+  --home:#56482f; --service:#2d4638; --water:#284758; --outdoor:#353a33; --septic:#5a3a31; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#131917; --paper:#1a2220; --ink:#dde6e2; --muted:#93a39e; --line:#2c3833; --grid:#222c29;
+  --accent:#6cbf97; --accent-ink:#0f1a15; --earth:#4a4436; --warn:#e2a15a; --bad:#ef7d72; --ok:#7fcf9a;
+  --home:#56482f; --service:#2d4638; --water:#284758; --outdoor:#353a33; --septic:#5a3a31; color-scheme:dark}
+body{background:var(--bg);color:var(--ink);font-family:var(--body)}
+.wrap{display:grid;grid-template-columns:360px minmax(0,1fr);gap:20px;max-width:1360px;margin:0 auto;
+  padding-block:20px 40px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+@media (max-width:900px){.wrap{grid-template-columns:minmax(0,1fr)}}
+h1{font-family:var(--display);font-weight:700;font-size:1.7rem;margin:0;letter-spacing:-.015em}
+h2{font-family:var(--display);font-weight:500;font-size:1.1rem;margin:0}
+.sub{color:var(--muted);margin:4px 0 0;font-size:.9rem;line-height:1.45}
+.rail,.main{display:flex;flex-direction:column;gap:16px;min-width:0}
+.card{background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:14px;display:flex;flex-direction:column;gap:10px;min-width:0}
+.lbl{font-size:.7rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:600}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:8px}.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+.field{display:flex;flex-direction:column;gap:4px;font-size:.78rem;color:var(--muted)}
+input,select,textarea{font:inherit;font-size:.9rem;color:var(--ink);background:var(--paper);border:1px solid var(--line);border-radius:6px;padding:7px 8px;min-width:0;width:100%;box-sizing:border-box}
+input[type=number]{font-family:var(--mono);font-size:.85rem}
+input[type=checkbox]{width:auto}
+.check{display:flex;gap:8px;align-items:center;font-size:.85rem}
+:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.hint{font-size:.75rem;color:var(--muted);line-height:1.4;margin:0}
+.slist{display:flex;flex-direction:column;gap:8px}
+.srow{display:grid;grid-template-columns:1fr 1fr 28px;gap:6px;align-items:center;padding-bottom:8px;border-bottom:1px dashed var(--line)}
+.srow .dims{display:grid;grid-template-columns:1fr 1fr;gap:6px;grid-column:1/3}
+.sw{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:6px;vertical-align:middle;border:1px solid var(--line)}
+.x{border:0;background:none;color:var(--muted);cursor:pointer;font-size:1.15rem;border-radius:4px;height:30px}
+.x:hover{background:var(--grid);color:var(--ink)}
+.btn{font:inherit;font-weight:600;font-size:.88rem;border-radius:6px;padding:8px 13px;cursor:pointer;border:1px solid var(--line);background:var(--paper);color:var(--ink)}
+.btn:hover{border-color:var(--accent)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn:disabled{opacity:.5;cursor:default}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.head{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.chips{display:flex;gap:8px;flex-wrap:wrap}
+.chip{font-family:var(--mono);font-size:.76rem;padding:5px 9px;border-radius:999px;border:1px solid var(--line);color:var(--muted);background:var(--paper)}
+.chip b{color:var(--ink);font-weight:500}
+.chip.ok{border-color:var(--ok);color:var(--ok)}.chip.bad{border-color:var(--bad);color:var(--bad)}
+.warns{display:flex;flex-direction:column;gap:6px;margin:0;padding:0;list-style:none}
+.warns li{font-size:.83rem;line-height:1.4;padding:7px 10px;border-radius:6px;border:1px solid var(--line);border-left-width:3px}
+.warns li.bad{border-left-color:var(--bad)}.warns li.warn{border-left-color:var(--warn)}.warns li.info{border-left-color:var(--accent)}
+.svgbox{overflow-x:auto}.svgbox svg{display:block;width:100%;height:auto;min-width:520px}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:.76rem;color:var(--muted)}
+table{border-collapse:collapse;width:100%;font-size:.84rem}
+td{padding:6px 4px;border-bottom:1px solid var(--line)}td.num{font-family:var(--mono);text-align:right;white-space:nowrap}
+.cols{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px}@media (max-width:1100px){.cols{grid-template-columns:minmax(0,1fr)}}
+.chat{display:flex;flex-direction:column;gap:8px;max-height:420px;overflow-y:auto}
+.msg{font-size:.88rem;line-height:1.5;padding:9px 11px;border-radius:8px;white-space:pre-wrap;max-width:92%}
+.msg.me{align-self:flex-end;background:var(--accent);color:var(--accent-ink)}
+.msg.ai{align-self:flex-start;background:var(--grid)}
+.sugg{font:inherit;font-size:.78rem;padding:5px 9px;border-radius:999px;border:1px solid var(--line);background:var(--paper);color:var(--ink);cursor:pointer}
+.sugg:hover{border-color:var(--accent)}
+.ask{display:grid;grid-template-columns:1fr auto;gap:8px}
+.toast{font-size:.8rem;color:var(--accent);min-height:1em}
+.foot{font-size:.75rem;color:var(--muted);line-height:1.45}
+</style>
+
+<div class="wrap">
+  <aside class="rail">
+    <div>
+      <h1>Lote Site Planner</h1>
+      <p class="sub">Enter your lot, the slope, and what you want to build. It lays out the site, checks setbacks, and shows the distances between structures.</p>
+    </div>
+
+    <div class="card">
+      <span class="lbl">Start from</span>
+      <select id="preset">
+        <option value="hill">Hillside cabin, kitchen, CR + pool</option>
+        <option value="house">House with garage (flat lot)</option>
+        <option value="resort">Two cabins, pool + gazebo</option>
+      </select>
+    </div>
+
+    <div class="card">
+      <span class="lbl">Lot (meters)</span>
+      <div class="g2">
+        <label class="field">Frontage (along road)<input id="lw" type="number" min="5" max="80" step="0.5"></label>
+        <label class="field">Depth (going in)<input id="ld" type="number" min="5" max="120" step="0.5"></label>
+      </div>
+      <div class="g2">
+        <label class="field">Terrain<select id="terrain">
+          <option value="down">Slopes down from road</option>
+          <option value="up">Slopes up from road</option>
+          <option value="flat">Flat</option>
+        </select></label>
+        <label class="field">Height difference, front to back (m)<input id="drop" type="number" min="0" max="30" step="0.5"></label>
+      </div>
+      <label class="field">Don't know the height? Pick how steep it feels<select id="steep">
+        <option value="">I'll enter the height myself</option>
+        <option value="0.05">Gentle: you can walk it like a normal road</option>
+        <option value="0.15">Moderate: noticeable climb, a bit tiring</option>
+        <option value="0.3">Steep: you'd want steps or a handrail</option>
+      </select></label>
+      <p class="hint" id="steepHint">Quick way to measure: stand at the road, look straight ahead to the back of the lot, and estimate how many "you" heights it drops. One person is about 1.6 m.</p>
+    </div>
+
+    <div class="card">
+      <span class="lbl">Setbacks &amp; spacing (meters)</span>
+      <div class="g3">
+        <label class="field">Front<input id="sf" type="number" min="0" max="20" step="0.5"></label>
+        <label class="field">Sides<input id="ss" type="number" min="0" max="10" step="0.5"></label>
+        <label class="field">Rear<input id="sr" type="number" min="0" max="20" step="0.5"></label>
+      </div>
+      <label class="check"><input id="fw" type="checkbox">Firewall on one side (that side's setback becomes 0)</label>
+      <label class="field">Gap between structures<input id="gap" type="number" min="0" max="10" step="0.5"></label>
+      <p class="hint">Defaults follow common R-1 values in the National Building Code (5 m front, 2 m sides and rear). Your city or municipality may set different numbers.</p>
+    </div>
+
+    <div class="card">
+      <div class="head"><span class="lbl">Structures</span><button class="btn" id="add" type="button">+ Add</button></div>
+      <p class="hint">Width runs along the road. Depth runs from the road going in. Parking goes in the front yard. A septic tank is added automatically when there's a toilet.</p>
+      <div class="slist" id="slist"></div>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div class="card">
+      <div class="head">
+        <h2 id="optTitle">Option 1</h2>
+        <div class="row">
+          <button class="btn primary" id="next" type="button">Try another arrangement</button>
+          <button class="btn" id="dl" type="button" hidden>Download SVG</button>
+        </div>
+      </div>
+      <div class="chips" id="chips"></div>
+      <ul class="warns" id="warns"></ul>
+      <div class="toast" id="toast" aria-live="polite"></div>
+    </div>
+
+    <div class="card">
+      <div class="head"><h2>Top view</h2><span class="hint" id="optDesc"></span></div>
+      <div class="svgbox" id="plan"></div>
+      <div class="legend">
+        <span><i class="sw" style="background:var(--home)"></i>Living</span>
+        <span><i class="sw" style="background:var(--service)"></i>Kitchen, CR, storage</span>
+        <span><i class="sw" style="background:var(--water)"></i>Pool</span>
+        <span><i class="sw" style="background:var(--outdoor)"></i>Outdoor, parking</span>
+        <span><i class="sw" style="background:var(--septic)"></i>Septic (approx.)</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="head"><h2>Side view</h2><span class="hint">True scale. Dashed line is the original ground.</span></div>
+      <div class="svgbox" id="section"></div>
+    </div>
+
+    <div class="cols">
+      <div class="card">
+        <h2>Distances between structures</h2>
+        <table id="dist"></table>
+      </div>
+      <div class="card" id="askCard">
+        <h2>Ask about this plan</h2>
+        <p class="hint" id="askNote">Ask anything about your layout. The answer uses the plan on this page.</p>
+        <div class="row" id="suggs">
+          <button class="sugg" type="button">Is this layout okay for my slope?</button>
+          <button class="sugg" type="button">How far should the septic tank be from the pool?</button>
+          <button class="sugg" type="button">What permits will I need?</button>
+          <button class="sugg" type="button">Give me a rough budget in pesos</button>
+        </div>
+        <div class="chat" id="chat"></div>
+        <form class="ask" id="askForm">
+          <input id="askIn" placeholder="e.g. Can I move the pool closer to the cabin?" autocomplete="off">
+          <button class="btn primary" id="askBtn" type="submit">Ask</button>
+        </form>
+      </div>
+    </div>
+
+    <p class="foot">Concept planning only. Slopes, retaining walls, pools and septic systems need design and sign-off by a licensed architect and civil engineer before you build or apply for a permit.</p>
+  </main>
+</div>
+
+<script>
+const TYPES={
+  cabin:{label:"Cabin / house",pri:8,h:3.2,roof:true,c:"home"},
+  kitchen:{label:"Kitchen / dining",pri:1,h:2.8,c:"service"},
+  toilet:{label:"Toilet / CR",pri:2,h:2.5,c:"service"},
+  storage:{label:"Storage",pri:3,h:2.4,c:"service"},
+  pool:{label:"Pool",pri:5,c:"water"},
+  gazebo:{label:"Gazebo / lanai",pri:6,h:3,roof:true,open:true,c:"outdoor"},
+  parking:{label:"Parking / carport",c:"outdoor"}
+};
+const PRESETS={
+  hill:{lw:10,ld:20,terrain:"down",drop:4,sf:5,ss:2,sr:2,fw:false,gap:1,items:[
+    ["Main cabin","cabin",6,5],["Kitchen & dining","kitchen",4.5,3],["Toilet","toilet",1.5,2],["Pool","pool",3,3],["Parking","parking",3,4.5]]},
+  house:{lw:12,ld:18,terrain:"flat",drop:0,sf:5,ss:2,sr:2,fw:true,gap:1,items:[
+    ["House","cabin",8,8],["Storage","storage",2,2],["Garden lanai","gazebo",3,2.5],["Carport","parking",3,5]]},
+  resort:{lw:16,ld:32,terrain:"down",drop:6,sf:5,ss:2,sr:2,fw:false,gap:1.5,items:[
+    ["Cabin A","cabin",5,5],["Cabin B","cabin",5,5],["Kitchen & dining","kitchen",5,4],["Toilet","toilet",2,2.5],["Pool","pool",4,7],["Gazebo","gazebo",3.5,3.5],["Parking","parking",5,4.5]]}
+};
+const VARIANTS=[];
+for(const order of ["service","home"])for(const pool of ["middle","back"])for(const mirror of [false,true])VARIANTS.push({order,pool,mirror});
+const $=id=>document.getElementById(id);
+let S=null, vi=0, last=null, chatTurns=[];
+
+function load(k){const p=PRESETS[k];S={...p,items:p.items.map(([name,type,w,d])=>({name,type,w,d}))};vi=0;syncInputs();drawList();render();}
+function syncInputs(){for(const k of ["lw","ld","terrain","drop","sf","ss","sr","gap"])$(k).value=S[k];$("fw").checked=S.fw;$("steep").value=S.steep||"";}
+function applySteep(){const s=parseFloat($("steep").value);S.steep=$("steep").value;if(s){const ld=parseFloat($("ld").value)||20;$("drop").value=Math.round(ld*s*2)/2;}}
+function save(){try{localStorage.setItem("lote-v1",JSON.stringify({S,vi}))}catch(e){}}
+function restore(){try{const r=JSON.parse(localStorage.getItem("lote-v1")||"null");if(r&&r.S&&Array.isArray(r.S.items)){S=r.S;vi=r.vi||0;syncInputs();drawList();render();return true}}catch(e){}return false}
+
+function drawList(){
+  const box=$("slist");box.innerHTML="";
+  S.items.forEach((it,i)=>{
+    const row=document.createElement("div");row.className="srow";
+    row.innerHTML=`<input id="sn${i}" aria-label="Structure name">
+      <select id="st${i}" aria-label="Type">${Object.entries(TYPES).map(([k,t])=>`<option value="${k}">${t.label}</option>`).join("")}</select>
+      <button class="x" type="button" aria-label="Remove">×</button>
+      <div class="dims"><label class="field">Width (m)<input id="sw${i}" type="number" min="0.5" step="0.5"></label>
+      <label class="field">Depth (m)<input id="sd${i}" type="number" min="0.5" step="0.5"></label></div>`;
+    const n=row.querySelector(`#sn${i}`),t=row.querySelector(`#st${i}`),w=row.querySelector(`#sw${i}`),d=row.querySelector(`#sd${i}`);
+    n.value=it.name;t.value=it.type;w.value=it.w;d.value=it.d;
+    n.oninput=()=>{it.name=n.value||"Untitled";render()};
+    t.onchange=()=>{it.type=t.value;render()};
+    w.oninput=()=>{it.w=Math.max(.5,+w.value||.5);render()};
+    d.oninput=()=>{it.d=Math.max(.5,+d.value||.5);render()};
+    row.querySelector(".x").onclick=()=>{S.items.splice(i,1);drawList();render()};
+    box.appendChild(row);
+  });
+}
+
+function compute(){
+  const v=VARIANTS[vi%VARIANTS.length],gap=S.gap;
+  const left=S.fw?0:S.ss,right=S.ss;
+  const B={x0:S.sf,x1:S.ld-S.sr,y0:left,y1:S.lw-right};
+  B.w=B.y1-B.y0;B.d=B.x1-B.x0;
+  const warns=[];
+  const pri=it=>{let p=TYPES[it.type].pri;
+    if(it.type==="pool")p=v.pool==="back"?9:5;
+    else if(v.order==="home"){if(it.type==="cabin")p=0.5;else if(["kitchen","toilet","storage"].includes(it.type))p=7+TYPES[it.type].pri/10;}
+    return p};
+  const items=S.items.filter(i=>i.type!=="parking").map((it,idx)=>({...it,idx,p:pri(it)})).sort((a,b)=>a.p-b.p||a.idx-b.idx);
+  // pack into rows (each row is a terrace)
+  const rows=[];let cur=null;
+  for(const it of items){
+    const prev=cur&&cur.items[cur.items.length-1];
+    const g=prev&&((prev.type==="kitchen"&&it.type==="toilet")||(prev.type==="toilet"&&it.type==="kitchen"))?0:gap;
+    if(cur&&cur.used+g+it.w<=B.w+1e-6){it.off=cur.used+g;cur.used+=g+it.w;cur.items.push(it);cur.d=Math.max(cur.d,it.d)}
+    else{cur={items:[it],used:it.w,d:it.d};it.off=0;rows.push(cur)}
+    if(it.w>B.w+1e-6)warns.push(["bad",`${it.name} is ${it.w} m wide but the buildable width is only ${B.w.toFixed(1)} m.`]);
+  }
+  let x=B.x0;const placed=[];
+  rows.forEach((r,k)=>{r.x=x;for(const it of r.items){const y=v.mirror?B.y1-it.off-it.w:B.y0+it.off;placed.push({...it,x,y})}x+=r.d+(k<rows.length-1?gap:0)});
+  const usedD=x-B.x0;
+  if(usedD>B.d+1e-6)warns.push(["bad",`The layout needs ${usedD.toFixed(1)} m of depth but only ${B.d.toFixed(1)} m is buildable. Shrink something by ${(usedD-B.d).toFixed(1)} m, reduce the gap, or try another arrangement.`]);
+  // parking in front yard
+  S.items.filter(i=>i.type==="parking").forEach((it,k)=>{
+    const y=v.mirror?S.lw-0.5-it.w-k*(it.w+0.5):0.5+k*(it.w+0.5);
+    placed.push({...it,x:Math.max(0.3,(S.sf-it.d)/2),y,front:true});
+    if(it.d>S.sf)warns.push(["warn",`${it.name} (${it.d} m deep) is deeper than the ${S.sf} m front yard, so it will extend into the buildable area.`]);
+  });
+  // septic beside the toilet, in a side setback
+  const toilet=placed.find(p=>p.type==="toilet");let septic=null;
+  if(toilet){
+    const sw=1.2,sd=2.4;const sides=[];
+    if(right>=sw+.3)sides.push(S.lw-right/2-sw/2);if(left>=sw+.3)sides.push(left/2-sw/2);
+    if(sides.length){const ty=toilet.y+toilet.w/2;sides.sort((a,b)=>Math.abs(a-ty)-Math.abs(b-ty));
+      septic={name:"Septic tank",type:"septic",x:Math.max(0.3,toilet.x),y:sides[0],w:sw,d:sd}}
+    else{septic={name:"Septic tank",type:"septic",x:0.3,y:S.lw/2-1.2,w:2.4,d:1.2};warns.push(["warn","The side setbacks are too narrow for a septic tank, so it's shown in the front yard."])}
+  }
+  // terraces / elevations
+  const sign=S.terrain==="down"?-1:S.terrain==="up"?1:0;
+  const ground=xm=>sign*S.drop*xm/S.ld;
+  const round=v=>Math.round(v*10)/10;
+  const ter=[{x0:0,x1:rows.length?rows[0].x-gap/2:S.ld,lvl:0,name:"Front yard"}];
+  rows.forEach((r,k)=>{const x0=k===0?ter[0].x1:r.x-gap/2,x1=k<rows.length-1?rows[k+1].x-gap/2:S.ld;
+    ter.push({x0,x1,lvl:round(ground(r.x+r.d/2)),name:r.items.map(i=>i.name).join(" + "),row:r})});
+  if(rows.length===0)ter[0].x1=S.ld;
+  placed.forEach(p=>{const t=ter.find(t=>t.row&&t.row.items.some(i=>i.idx===p.idx&&!p.front));p.lvl=t?t.lvl:0});
+  if(sign){for(let k=1;k<ter.length;k++){const h=Math.abs(ter[k].lvl-ter[k-1].lvl);ter[k].wall=round(h);
+    if(h>1.5)warns.push(["warn",`The retaining wall in front of ${ter[k].name} is about ${h.toFixed(1)} m tall. Walls this high need structural design by an engineer.`])}}
+  const pool=placed.find(p=>p.type==="pool");
+  if(pool&&sign){const t=ter.find(t=>t.row&&t.row.items.some(i=>i.idx===pool.idx));const gMin=Math.min(ground(t.x0),ground(t.x1));
+    if(t.lvl>gMin+.05&&S.terrain==="down")warns.push(["warn",`Part of the pool terrace sits on filled soil. Pools are heavy, so plan engineered fill or dig the pool deeper into the hill.`]);}
+  if(septic&&pool){warns.push(["info",`The septic tank is ${rectDist(septic,pool).toFixed(1)} m from the pool. Ask your engineer and local sanitation office for the minimum distance in your area.`])}
+  // stats
+  const roofed=placed.filter(p=>!p.front&&p.type!=="pool").reduce((s,p)=>s+p.w*p.d,0);
+  const all=[...placed,...(septic?[septic]:[])];
+  const pairs=[];const vis=placed.filter(p=>!p.front);
+  for(let i=0;i<vis.length;i++)for(let j=i+1;j<vis.length;j++)pairs.push([vis[i],vis[j],rectDist(vis[i],vis[j])]);
+  pairs.sort((a,b)=>a[2]-b[2]);
+  return {v,B,rows,placed:all,septic,ter,ground,warns,usedD,roofed,pairs,fits:usedD<=B.d+1e-6&&!warns.some(w=>w[0]==="bad")};
+}
+function rectDist(a,b){const dx=Math.max(0,a.x-(b.x+b.d),b.x-(a.x+a.d)),dy=Math.max(0,a.y-(b.y+b.w),b.y-(a.y+a.w));return Math.hypot(dx,dy)}
+function esc(s){return String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]))}
+function col(){const cs=getComputedStyle(document.documentElement);return n=>cs.getPropertyValue("--"+n).trim()}
+
+function planSVG(P,c){
+  const K=28,pad=56,W=S.ld*K+pad*2+30,H=S.lw*K+pad*2+40;
+  const X=m=>pad+30+m*K,Y=m=>pad+m*K;let o="";
+  o+=`<rect width="${W}" height="${H}" fill="${c("paper")}"/>`;
+  for(let i=0;i<=S.ld;i++)o+=`<line x1="${X(i)}" y1="${Y(0)}" x2="${X(i)}" y2="${Y(S.lw)}" stroke="${c("grid")}"/>`;
+  for(let j=0;j<=S.lw;j++)o+=`<line x1="${X(0)}" y1="${Y(j)}" x2="${X(S.ld)}" y2="${Y(j)}" stroke="${c("grid")}"/>`;
+  o+=`<rect x="${pad-8}" y="${Y(0)}" width="30" height="${S.lw*K}" fill="${c("muted")}" opacity=".18"/>`;
+  o+=`<text x="${pad+7}" y="${Y(S.lw/2)}" font-family="IBM Plex Mono, monospace" font-size="12" fill="${c("muted")}" text-anchor="middle" transform="rotate(-90 ${pad+7} ${Y(S.lw/2)})" letter-spacing="2">ROAD</text>`;
+  o+=`<rect x="${X(P.B.x0)}" y="${Y(P.B.y0)}" width="${P.B.d*K}" height="${P.B.w*K}" fill="none" stroke="${c("accent")}" stroke-width="1.2" stroke-dasharray="6 5"/>`;
+  for(const p of P.placed){
+    const t=p.type==="septic"?{c:"septic"}:TYPES[p.type];
+    o+=`<rect x="${X(p.x)}" y="${Y(p.y)}" width="${p.d*K}" height="${p.w*K}" fill="${c(t.c)}" stroke="${c("ink")}" stroke-width="${p.type==="pool"||p.front||t.open||p.type==="septic"?1.2:2.5}"${p.front||t.open?' stroke-dasharray="6 4"':''}/>`;
+    const cx=X(p.x+p.d/2),cy=Y(p.y+p.w/2),fs=Math.max(9,Math.min(14,Math.min(p.d,p.w)*K/5.5));
+    o+=`<text x="${cx}" y="${cy-fs*.25}" text-anchor="middle" font-family="Familjen Grotesk, system-ui, sans-serif" font-weight="700" font-size="${fs}" fill="${c("ink")}">${esc(p.name)}</text>
+      <text x="${cx}" y="${cy+fs*.95}" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="${fs*.72}" fill="${c("muted")}">${p.d}×${p.w} m</text>`;
+  }
+  o+=`<rect x="${X(0)}" y="${Y(0)}" width="${S.ld*K}" height="${S.lw*K}" fill="none" stroke="${c("ink")}" stroke-width="2"/>`;
+  // dimension chain along the bottom
+  const marks=[0,P.B.x0];P.rows.forEach(r=>{marks.push(r.x,r.x+r.d)});marks.push(P.B.x1,S.ld);
+  const m=[...new Set(marks.map(v=>Math.round(v*100)/100))].filter(v=>v>=0&&v<=S.ld).sort((a,b)=>a-b);
+  const yd=Y(S.lw)+22;o+=`<g font-family="IBM Plex Mono, monospace" font-size="10" fill="${c("muted")}">`;
+  o+=`<line x1="${X(0)}" y1="${yd}" x2="${X(S.ld)}" y2="${yd}" stroke="${c("muted")}" stroke-width=".8"/>`;
+  m.forEach((v,i)=>{o+=`<line x1="${X(v)}" y1="${yd-5}" x2="${X(v)}" y2="${yd+5}" stroke="${c("muted")}"/>`;
+    if(i){const len=v-m[i-1];if(len*K>=18)o+=`<text x="${X((v+m[i-1])/2)}" y="${yd+16}" text-anchor="middle">${+len.toFixed(1)}</text>`}});
+  o+=`<text x="${X(S.ld)}" y="${yd+32}" text-anchor="end">meters · lot ${S.ld} deep × ${S.lw} wide</text></g>`;
+  const dir=S.terrain==="down"?"Downhill →":S.terrain==="up"?"Uphill →":"Flat";
+  o+=`<text x="${X(S.ld)}" y="${pad-16}" text-anchor="end" font-family="IBM Plex Mono, monospace" font-size="12" fill="${c("muted")}">${dir}</text>`;
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" role="img" aria-label="Top view of the site plan">${o}</svg>`;
+}
+
+function sectionSVG(P,c){
+  const K=28,pad=56;
+  const lv=P.ter.map(t=>t.lvl),gl=[P.ground(0),P.ground(S.ld)];
+  const top=Math.max(...lv,...gl)+4.2,bot=Math.min(...lv,...gl)-2.2;
+  const W=S.ld*K+pad*2+30,H=(top-bot)*K+pad+40;
+  const X=m=>pad+30+m*K,Y=e=>pad/2+(top-e)*K;let o=`<rect width="${W}" height="${H}" fill="${c("paper")}"/>`;
+  let pts=[];P.ter.forEach(t=>{pts.push(`${X(t.x0)},${Y(t.lvl)}`,`${X(t.x1)},${Y(t.lvl)}`)});
+  o+=`<polygon points="${X(0)},${Y(bot)} ${pts.join(" ")} ${X(S.ld)},${Y(bot)}" fill="${c("earth")}" opacity=".55"/>`;
+  o+=`<rect x="${pad-8}" y="${Y(0)}" width="38" height="5" fill="${c("muted")}"/>`;
+  o+=`<text x="${pad+11}" y="${Y(0)-8}" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="11" fill="${c("muted")}">Road</text>`;
+  P.ter.forEach((t,k)=>{o+=`<line x1="${X(t.x0)}" y1="${Y(t.lvl)}" x2="${X(t.x1)}" y2="${Y(t.lvl)}" stroke="${c("ink")}" stroke-width="1.5"/>`;
+    if(k){const p=P.ter[k-1];o+=`<line x1="${X(t.x0)}" y1="${Y(p.lvl)}" x2="${X(t.x0)}" y2="${Y(t.lvl)}" stroke="${c("ink")}" stroke-width="4"/>`;
+      if(t.wall>0.05)o+=`<text x="${X(t.x0)+5}" y="${(Y(p.lvl)+Y(t.lvl))/2+4}" font-family="IBM Plex Mono, monospace" font-size="10" fill="${c("muted")}">${t.wall} m wall</text>`}});
+  o+=`<line x1="${X(0)}" y1="${Y(P.ground(0))}" x2="${X(S.ld)}" y2="${Y(P.ground(S.ld))}" stroke="${c("ink")}" stroke-width="1" stroke-dasharray="5 5" opacity=".6"/>`;
+  // structures: front-most in each row drawn (side view sees the row)
+  for(const p of P.placed){
+    if(p.type==="septic")continue;
+    const t=TYPES[p.type],base=p.front?0:p.lvl;
+    if(p.type==="pool"){o+=`<rect x="${X(p.x)}" y="${Y(base)}" width="${p.d*K}" height="${1.4*K}" fill="${c("water")}" stroke="${c("ink")}" stroke-width="1.2"/>`;continue}
+    if(p.type==="parking"){o+=`<rect x="${X(p.x)}" y="${Y(base)-3}" width="${p.d*K}" height="3" fill="${c("muted")}"/>`;continue}
+    const h=t.h;
+    o+=`<rect x="${X(p.x)}" y="${Y(base+h)}" width="${p.d*K}" height="${h*K}" fill="${c(t.c)}" fill-opacity="${t.open?.35:1}" stroke="${c("ink")}" stroke-width="1.5"/>`;
+    if(t.roof)o+=`<polyline points="${X(p.x)-6},${Y(base+h)} ${X(p.x+p.d/2)},${Y(base+h+1)} ${X(p.x+p.d)+6},${Y(base+h)}" fill="none" stroke="${c("ink")}" stroke-width="1.5"/>`;
+  }
+  P.ter.forEach((t,k)=>{if(!k&&!P.placed.some(p=>p.front))return;
+    const nm=k?t.name:"Front yard";const w=(t.x1-t.x0)*K;if(w<40)return;
+    o+=`<text x="${X((t.x0+t.x1)/2)}" y="${Y(bot)-10}" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="10" fill="${c("ink")}">${esc(nm.length*6>w?nm.slice(0,Math.floor(w/6.5))+"…":nm)}</text>
+    <text x="${X((t.x0+t.x1)/2)}" y="${Y(bot)+6}" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="10" fill="${c("muted")}">${t.lvl>0?"+":""}${t.lvl} m</text>`});
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" role="img" aria-label="Side view showing terraces">${o}</svg>`;
+}
+
+function render(){
+  if(!S)return;
+  for(const k of ["lw","ld","drop","sf","ss","sr","gap"]){const v=parseFloat($(k).value);if(!isNaN(v))S[k]=Math.max(0,v)}
+  S.lw=Math.max(5,S.lw);S.ld=Math.max(5,S.ld);S.terrain=$("terrain").value;S.fw=$("fw").checked;
+  $("drop").disabled=S.terrain==="flat";$("steep").disabled=S.terrain==="flat";
+  $("steepHint").textContent=S.steep&&S.terrain!=="flat"?`Estimated about ${S.drop} m drop over ${S.ld} m. Measure it later to make the walls and terraces accurate.`:"Quick way to measure: stand at the road, look straight ahead to the back of the lot, and estimate how many person-heights it drops. One person is about 1.6 m.";
+  const P=compute(),c=col();last=P;
+  $("plan").innerHTML=planSVG(P,c);$("section").innerHTML=sectionSVG(P,c);
+  $("optTitle").textContent=`Option ${vi%VARIANTS.length+1} of ${VARIANTS.length}`;
+  const v=P.v;$("optDesc").textContent=`${v.order==="service"?"Kitchen & CR near the road":"Living near the road"}, pool ${v.pool==="middle"?"in the middle":"at the back"}${v.mirror?", mirrored":""}`;
+  const lotA=S.lw*S.ld;
+  $("chips").innerHTML=`<span class="chip ${P.fits?"ok":"bad"}">${P.fits?"Fits the lot":"Doesn't fit yet"}</span>
+    <span class="chip">Lot <b>${lotA.toFixed(0)} m²</b></span>
+    <span class="chip">Buildable <b>${(P.B.w*P.B.d).toFixed(0)} m²</b> (${P.B.w.toFixed(1)} × ${P.B.d.toFixed(1)} m)</span>
+    <span class="chip">Roofed <b>${P.roofed.toFixed(0)} m²</b> · ${(P.roofed/lotA*100).toFixed(0)}% of lot</span>
+    <span class="chip">Depth used <b>${P.usedD.toFixed(1)} / ${P.B.d.toFixed(1)} m</b></span>`;
+  $("warns").innerHTML=P.warns.map(([k,t])=>`<li class="${k}">${esc(t)}</li>`).join("");
+  $("dist").innerHTML=P.pairs.length?P.pairs.slice(0,10).map(([a,b,d])=>`<tr><td>${esc(a.name)} ↔ ${esc(b.name)}</td><td class="num">${d<0.05?"attached":d.toFixed(1)+" m"}</td></tr>`).join(""):`<tr><td>Add at least two structures to see distances.</td></tr>`;
+  save();
+}
+
+function planText(){
+  const P=last;const r=v=>+v.toFixed(1);
+  return `LOT: ${S.lw} m frontage x ${S.ld} m deep (${S.lw*S.ld} m2), Philippines.
+TERRAIN: ${S.terrain==="flat"?"flat":`slopes ${S.terrain==="down"?"DOWN":"UP"} going away from the road, ${S.drop} m height difference front to back`}.
+SETBACKS: front ${S.sf} m, sides ${S.ss} m${S.fw?" (firewall on one side, 0 m there)":""}, rear ${S.sr} m. Gap between structures ${S.gap} m.
+BUILDABLE AREA: ${r(P.B.w)} m wide x ${r(P.B.d)} m deep.
+STRUCTURES (x = meters from road, y = meters from left lot line, level = terrace elevation relative to road):
+${P.placed.map(p=>`- ${p.name} [${p.type}] ${p.w} m wide x ${p.d} m deep at x=${r(p.x)}, y=${r(p.y)}${p.lvl!==undefined?`, level ${p.lvl} m`:""}${p.front?" (front yard)":""}`).join("\n")}
+TERRACES: ${P.ter.map(t=>`${t.name} at ${t.lvl} m${t.wall?` (retaining wall ${t.wall} m)`:""}`).join("; ")}.
+DISTANCES: ${P.pairs.slice(0,8).map(([a,b,d])=>`${a.name}-${b.name} ${r(d)} m`).join("; ")}.
+TOOL WARNINGS: ${P.warns.map(w=>w[1]).join(" ")||"none"}`;
+}
+const RULES=`You are a helpful site-planning assistant acting like a practical Filipino architect and civil engineer. The user is planning a property with a planning tool; the current plan is below. Answer their question about it directly and concretely in plain language, in the same language they write in (English, Filipino or Taglish). Use meters and pesos (₱). Reference the Philippine National Building Code (PD 1096) and common local practice where helpful, but say when a number varies by LGU or must be confirmed by a licensed architect, civil/geotechnical engineer, or the local building/sanitation office. For costs, give rough ranges and say what drives them. Keep answers under about 220 words unless asked for more. Use short paragraphs or simple dashes, no markdown headings or bold.`;
+
+let sample=null,busy=false;
+async function ask(q){
+  if(!sample||busy||!q.trim())return;busy=true;$("askBtn").disabled=true;
+  const chat=$("chat");const me=document.createElement("div");me.className="msg me";me.textContent=q;chat.appendChild(me);
+  const ai=document.createElement("div");ai.className="msg ai";ai.textContent="Thinking…";chat.appendChild(ai);chat.scrollTop=chat.scrollHeight;
+  chatTurns.push({role:"user",content:q});
+  const msgs=[{role:"user",content:RULES+"\n\nCURRENT PLAN:\n"+planText()+"\n\nQUESTION: "+chatTurns[0].content},...chatTurns.slice(1)];
+  if(chatTurns.length>1){msgs[msgs.length-1]={role:"user",content:"(Plan may have changed. Current plan:\n"+planText()+")\n\n"+q}}
+  try{const {text}=await sample(msgs,{cache:false,onText:({text})=>{ai.textContent=text;chat.scrollTop=chat.scrollHeight}});
+    ai.textContent=text;chatTurns.push({role:"assistant",content:text});}
+  catch(e){chatTurns.pop();
+    ai.textContent=e&&e.code==="rate_limited"?"Too many questions at once. Wait a minute and ask again.":e&&e.code==="not_granted"?"Asking needs your permission. Open the page's permissions to allow it.":"That question didn't go through. Try asking again.";}
+  busy=false;$("askBtn").disabled=false;
+}
+$("askForm").addEventListener("submit",e=>{e.preventDefault();const q=$("askIn").value;$("askIn").value="";ask(q)});
+document.querySelectorAll(".sugg").forEach(b=>b.onclick=()=>ask(b.textContent));
+
+for(const k of ["lw","sf","ss","sr","gap"])$(k).addEventListener("input",render);
+$("ld").addEventListener("input",()=>{applySteep();render()});
+$("drop").addEventListener("input",()=>{$("steep").value="";S.steep="";render()});
+$("steep").onchange=()=>{applySteep();render()};
+$("terrain").onchange=render;$("fw").onchange=render;
+$("preset").onchange=e=>load(e.target.value);
+$("add").onclick=()=>{S.items.push({name:"New structure",type:"storage",w:2,d:2});drawList();render()};
+$("next").onclick=()=>{vi=(vi+1)%VARIANTS.length;render()};
+matchMedia("(prefers-color-scheme: dark)").addEventListener("change",render);
+new MutationObserver(render).observe(document.documentElement,{attributes:true,attributeFilter:["data-theme"]});
+
+if(!restore())load("hill");
+
+(async()=>{
+  const cl=window.claude;
+  sample=cl&&cl.use?await cl.use("sample"):null;
+  if(!sample){$("askCard").hidden=true}
+  const downloads=(cl&&cl.use?await cl.use("downloads"):null)||{save:async({filename,data})=>{const u=URL.createObjectURL(data);const a=document.createElement("a");a.href=u;a.download=filename;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),1000)}};
+  if(downloads){$("dl").hidden=false;$("dl").onclick=async()=>{
+    const c=col(),a=planSVG(last,c),b=sectionSVG(last,c);
+    const vb=s=>s.match(/viewBox="0 0 ([\d.]+) ([\d.]+)"/).slice(1).map(Number);
+    const [w1,h1]=vb(a),[w2,h2]=vb(b),W=Math.max(w1,w2);
+    const svg=`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${h1+h2}"><rect width="${W}" height="${h1+h2}" fill="${c("paper")}"/>${a.replace("<svg ",'<svg x="0" y="0" width="'+w1+'" height="'+h1+'" ')}${b.replace("<svg ",'<svg x="0" y="'+h1+'" width="'+w2+'" height="'+h2+'" ')}</svg>`;
+    try{await downloads.save({filename:"site-plan.svg",data:new Blob([svg],{type:"image/svg+xml"})});$("toast").textContent="Saved site-plan.svg."}
+    catch(e){$("toast").textContent=e&&e.code==="declined"?"":"Download isn't available here."}
+  }}
+})();
+</script>
+
+</body>
+</html>
